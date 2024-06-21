@@ -4,17 +4,42 @@ import re
 
 
 numbers_re = re.compile(r"(\d+)")
-excluded_chars = "0123456789."
+star_re = re.compile(r"\*")
 
 
-def get_unique_indices(lst):
-    """
-    Generate unique combination of all the neighbor indices of each of the
-    digits of a matched number: this is done using a union.
-    Taken from:
-    https://stackoverflow.com/questions/2151517/pythonic-way-to-create-union-of-all-values-contained-in-multiple-lists
-    """
-    return set().union(*lst)
+class Star:
+    def __init__(self, row, col, neighbor_idices, num_matrix):
+        self.row = row
+        self.col = col
+        self.neighbor_idices = neighbor_idices
+        self.num_matrix = num_matrix
+        self.adjacent_numbers = set()
+        self.find_adjacent_numers()
+        self.is_gear = ( len(self.adjacent_numbers) == 2 )
+        if self.is_gear:
+            x, y = self.adjacent_numbers
+            self.ratio = x.value * y.value
+
+    def find_adjacent_numers(self):
+        for i, j in self.neighbor_idices:
+            if self.num_matrix[i][j] is not None:
+                self.adjacent_numbers.add(self.num_matrix[i][j])
+
+    def __str__(self):
+        return (f"row: {self.row}, col: {self.col}, "
+                f"neighbor indices: {self.neighbor_idices}")
+
+
+class Number:
+    def __init__(self, value, row, span, data_matrix):
+        self.value = value
+        self.row = row
+        self.span = span
+        for col in range(*span):
+            data_matrix[row][col] = self
+
+    def __str__(self):
+        return f"value: {self.value}, row: {self.row}, span: {self.span}"
 
 
 def get_neighbor_indices(i, j):
@@ -30,29 +55,37 @@ def get_neighbor_indices(i, j):
     ]
 
 
-def get_values(indices_list, data):
-    return [
-        data[i][j]
-        for i, j in indices_list
-        if data[i][j] not in excluded_chars
-    ]
-
-
 if __name__ == "__main__":
     with open(argv[1], "r") as f:
         data = [line.strip() for line in f.readlines()]
     N = len(data)
     M = len(data[0])
+    data_matrix = [
+        [ None for _ in range(N) ]
+        for _ in range(M)
+    ]
 
-    part_nums = []
+    numbers = []
     for i, row in enumerate(data):
-        numbers = re.finditer(numbers_re, row)
-        for match in numbers:
-            match_indices = [x for x in range(*match.span())]
-            indices_list = get_unique_indices(
-                [get_neighbor_indices(i, j) for j in match_indices]
+        matches = re.finditer(numbers_re, row)
+        numbers += [
+            Number(int(match.group(1)), i, match.span(), data_matrix)
+            for match in matches
+        ]
+    
+    stars = []
+    for i, row in enumerate(data):
+        star_matches = re.finditer(star_re, row)
+        stars += [
+            Star(
+                i, int(match.span()[0]),
+                get_neighbor_indices(i, int(match.span()[0])),
+                data_matrix
             )
-            if len(get_values(indices_list, data)) != 0:
-                part_nums.append(int(match.group(1)))
-    print("-------------------------------")
-    print(f"Sum of part nums: {sum(part_nums)}")
+            for match in star_matches
+        ]
+
+    valid_gears = [ star for star in stars if star.is_gear ]
+    sum_gear_ratios = sum([ gear.ratio for gear in valid_gears ])
+    print("--------------------------")
+    print(f"Sum of gear ratios: {sum_gear_ratios}")
