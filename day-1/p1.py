@@ -5,9 +5,10 @@ import re
 first_digit_regex = re.compile(r"^[a-z]*(?P<fdig>\d)")
 
 
-def get_first_digit(s: str) -> int:
-    m = re.match(first_digit_regex, s).group(1)
-    return int(m)
+def get_first_digit(s: str) -> int | None:
+    m: Match | None = re.match(first_digit_regex, s)
+    if m:
+        return int(m.group(1))
 
 
 if __name__ == "__main__":
