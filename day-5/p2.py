@@ -51,11 +51,11 @@ if __name__ == "__main__":
         for i in range(1, 8)
     }
     
-    min = -1
-    # print(seed_ranges, len(seed_ranges))
-    for rng in tqdm(seed_ranges):
-        for seed in tqdm(rng, leave=False):
-            output = apply_all_maps(seed)
-            if output < min or min == -1:
-                min = output
-    print(min)
+    with open("minimums.txt", "w") as f:
+        for i, rng in enumerate(tqdm(seed_ranges)):
+            min = -1
+            for seed in tqdm(rng, leave=False):
+                output = apply_all_maps(seed)
+                if output < min or min == -1:
+                    min = output
+            f.write(f"Part {i}: {min}\n")
